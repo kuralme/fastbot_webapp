@@ -1,0 +1,73 @@
+<html>
+
+<head>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <!-- ROS stuff -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/eventemitter2/lib/eventemitter2.min.js"></script>
+    <script src="./libs/roslib.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+
+</head>
+
+<body>
+    <!-- header of the page -->
+    <header class="header">
+        <div class="container">
+            <div class="jumbotron text-center">
+                <h1>Fastbot Webapp</h1>
+                <p>Let's connect our website to a ROS robot!</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- main content -->
+    <main id="vueApp">
+        <div class="container">
+            <div class="row">
+
+                <!-- ros connection and robot states-->
+                <div class="col-md-4 col-sm-12">
+                    <h3>{{ menu_title }}</h3>
+                    <p class="text-danger" v-if="!connected">Not connected!</p>
+                    <p class="text-success" v-if="connected">Connected!</p>
+                    <label>ROSBridge address</label>
+                    <br>
+                    <input type="text" v-model="rosbridge_address" />
+                    <br>
+                    <button :disabled="loading" class="btn btn-danger" @click="disconnect"
+                        v-if="connected">Disconnect!</button>
+                    <button :disabled="loading" class="btn btn-success" @click="connect" v-else>Connect!</button>
+
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- footer -->
+    <footer class="footer mt-auto bg-dark text-light">
+        <hr />
+        <div class="container">
+            <h5>Created by @EgeKural</h5>
+        </div>
+    </footer>
+
+    <script type="text/javascript">
+        // We could have loaded main.js simply with:
+        //  <script type="text/javascript" src="main.js">
+        //
+        // BUT we were having caching-related problems.
+        // Loading main.js with a Date.now() in the URL we avoid using cache
+
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = 'main.js?v=16.' + Date.now();
+        document.head.appendChild(script);
+    </script>
+</body>
+
+</html>
