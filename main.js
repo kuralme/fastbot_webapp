@@ -10,12 +10,12 @@ let vueApp = new Vue({
         port: '9090',
         menu_title: 'ROS Connection',
 
-        // joystick values
+        // joystick
         joystick: {
             vertical: 0,
             horizontal: 0,
         },
-        // dragging data
+        // dragging
         dragging: false,
         x: 'no',
         y: 'no',
@@ -29,8 +29,10 @@ let vueApp = new Vue({
         },
         // publisher
         pubInterval: null,
+        // subscriber
+        pose: { x: 0.0, y: 0.0, yaw: 0.0},
 
-        // 3D stuff
+        // 3D visualization
         viewer: null,
         tfClient: null,
         urdfClient: null,
@@ -45,9 +47,39 @@ let vueApp = new Vue({
             })
             this.ros.on('connection', () => {
                 this.logs.unshift((new Date()).toTimeString() + ' - Connected!')
+                // Subscribe to odom
+                let topic = new ROSLIB.Topic({
+                    ros: this.ros,
+                    name: '/fastbot_1/odom',
+                    messageType: 'nav_msgs/Odometry'
+                })
+                topic.subscribe((message) => {
+                    this.pose.x = message.pose.pose.position.x
+                    this.pose.y = message.pose.pose.position.y
+                    const q = message.pose.pose.orientation
+                    this.pose.yaw = Math.atan2(2.0 * (q.w * q.z + q.x * q.y), 1.0 - 2.0 * (q.y * q.y + q.z * q.z))
+                    console.log(message)
+                })
                 this.connected = true
                 this.loading = false
                 this.setup3DViewer()
+
+                // Setup the map client and viewer
+                this.mapViewer = new ROS2D.Viewer({
+                    divID: 'map',
+                    width: 252,
+                    height: 216
+                })
+                this.mapGridClient = new ROS2D.OccupancyGridClient({
+                    ros: this.ros,
+                    rootObject: this.mapViewer.scene,
+                    continuous: true,
+                })
+                // Scale the canvas to fit to the map
+                this.mapGridClient.on('change', () => {
+                    this.mapViewer.scaleToDimensions(this.mapGridClient.currentGrid.width, this.mapGridClient.currentGrid.height);
+                    this.mapViewer.shift(this.mapGridClient.currentGrid.pose.position.x, this.mapGridClient.currentGrid.pose.position.y)
+                })
             })
             this.ros.on('error', (error) => {
                 this.logs.unshift((new Date()).toTimeString() + ` - Error: ${error}`)
@@ -134,8 +166,8 @@ let vueApp = new Vue({
             this.viewer = new ROS3D.Viewer({
                 background: '#cccccc',
                 divID: 'div3DViewer',
-                width: 200,
-                height: 150,
+                width: 300,
+                height: 200,
                 antialias: true,
                 fixedFrame: 'fastbot_1_base_link'
             })

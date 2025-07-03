@@ -1,21 +1,27 @@
 <html>
 
 <head>
-
     <!-- Bootstrap -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <!-- Vuejs -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+
     <!-- ROS stuff -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/eventemitter2/lib/eventemitter2.min.js"></script>
     <script src="./libs/roslib.min.js"></script>
+
     <!-- 3D visualization -->
     <script src="./libs/three.min.js"></script>
     <script src="./libs/ColladaLoader.js"></script>
     <script src="./libs/ColladaLoader2.js"></script>
     <script src="./libs/STLLoader.js"></script>
     <script src="./libs/ros3d.min.js"></script>
-    <!-- Vuejs -->
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+
+    <!-- Map visualization -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/easeljs/lib/easeljs.min.js"></script>
+    <script type="text/javascript" src="./ros2d.js"></script>
 
     <!-- Joystick DragCircle -->
     <style type="text/css">
@@ -46,6 +52,14 @@
         #dragCircle:hover {
             background-color: lightcoral;
         }
+
+        .jumbotron {
+            padding: 1rem 1rem;
+        }
+
+        .jumbotron p {
+            font-size: 1rem;
+        }
     </style>
 </head>
 
@@ -65,8 +79,8 @@
         <div class="container">
             <div class="row">
 
-                <!-- ros connection and robot states-->
                 <div class="col-md-4 col-sm-12">
+                    <!-- ros connection -->
                     <h3>{{ menu_title }}</h3>
                     <p class="text-danger" v-if="!connected">Not connected!</p>
                     <p class="text-success" v-if="connected">Connected!</p>
@@ -78,42 +92,43 @@
                         v-if="connected">Disconnect!</button>
                     <button :disabled="loading" class="btn btn-success" @click="connect" v-else>Connect!</button>
 
+                    <!-- robot states-->
                     <hr>
                     <h4>Robot states</h4>
                     <p>
-                        <!-- <span>X: {{ position.x.toFixed(2) }}</span>
+                        <span>X: {{ pose.x.toFixed(2) }}</span>
                         <br>
-                        <span>Y: {{ position.y.toFixed(2) }}</span>
+                        <span>Y: {{ pose.y.toFixed(2) }}</span>
                         <br>
-                        <span>Z: {{ position.z.toFixed(2) }}</span> -->
-                        <span>X: </span>
+                        <span>Yaw: {{ pose.yaw.toFixed(2) }}</span>
                         <br>
-                        <span>Y: </span>
+                        <span>LinX: {{ joystick.vertical.toFixed(3) }}</span>
                         <br>
-                        <span>Yaw: </span>
-                        <br>
-                        <span>LinX: </span>
-                        <br>
-                        <span>AngZ: </span>
+                        <span>AngZ: {{ joystick.horizontal.toFixed(3) }}</span>
                     </p>
                 </div>
 
-                <!-- joystick -->
-                <div class="col-md-4 col-sm-12">
+                <div class="col-md-4 col-sm-12" style="overflow:auto;">
+                    <!-- robot display -->
+                    <div id="div3DViewer"></div>
+                    <hr />
+
+                    <!-- joystick -->
                     <div class="d-flex align-items-center">
                         <div id="dragstartzone" @mousedown="startDrag" @mousemove="doDrag" @mouseleave="stopDrag">
                         </div>
                         <div id="dragCircle" :style="dragCircleStyle"></div>
-                        <div class="ml-3">
-                            <p>LinX: {{ joystick.vertical.toFixed(3) }}</p>
-                            <p>AngZ: {{ joystick.horizontal.toFixed(3) }}</p>
-                        </div>
                     </div>
                 </div>
 
-                <!-- robot display -->
-                <div class="col-md-4 col-sm-12" style="overflow:auto;">
-                    <div id="div3DViewer"></div>
+                <div class="col-md-4 col-sm-12">
+                    <!-- map -->
+                    <div id="map"></div>
+                    <hr />
+
+                    <!-- cam stream, waypoint buttons -->
+
+                    <!-- waypoint buttons -->
                 </div>
 
             </div>
@@ -121,10 +136,11 @@
     </main>
 
     <!-- footer -->
-    <!-- <footer class="footer mt-auto bg-dark text-light">
+    <footer class="footer mt-auto bg-dark text-light">
         <div class="container">
+            <h5>Created by @kuralme</h5>
         </div>
-    </footer> -->
+    </footer>
 
     <script type="text/javascript">
         // We could have loaded main.js simply with:
