@@ -51,7 +51,7 @@ let vueApp = new Vue({
                 let topic = new ROSLIB.Topic({
                     ros: this.ros,
                     name: '/fastbot_1/odom',
-                    messageType: 'nav_msgs/Odometry'
+                    messageType: 'nav_msgs/msg/Odometry'
                 })
                 topic.subscribe((message) => {
                     this.pose.x = message.pose.pose.position.x
@@ -63,12 +63,13 @@ let vueApp = new Vue({
                 this.connected = true
                 this.loading = false
                 this.setup3DViewer()
+                this.setCamera()
 
                 // Setup the map client and viewer
                 this.mapViewer = new ROS2D.Viewer({
                     divID: 'map',
-                    width: 252,
-                    height: 216
+                    width: 270,
+                    height: 200
                 })
                 this.mapGridClient = new ROS2D.OccupancyGridClient({
                     ros: this.ros,
@@ -108,15 +109,35 @@ let vueApp = new Vue({
             })
             topic.publish(message)
         },
-        sendCommand: function() {
+
+        // Goal pose publisher
+        sendGoal: function(goalName) {
+            // Define poses for each waypoint
+            const waypoints = {
+                'sofa':       { x: -2.5844, y: -1.1867, quaternion: { x: 0, y: 0, z: 0, w: 1. } },
+                'kitchen':    { x: 0.8044, y: 2.8236, quaternion: { x: 0, y: 0, z: 1., w: 0 } },
+                'living-room':{ x: 1.4296, y: -1.1812, quaternion: { x: 0, y: 0, z: 1., w: 0 } }
+            }
+            const goal = waypoints[goalName] || waypoints['sofa']
+
             let topic = new ROSLIB.Topic({
                 ros: this.ros,
-                name: '/fastbot_1/cmd_vel',
-                messageType: 'geometry_msgs/Twist'
+                name: '/goal_pose',
+                messageType: 'geometry_msgs/msg/PoseStamped'
             })
             let message = new ROSLIB.Message({
-                linear: { x: 0.2, y: 0, z: 0, },
-                angular: { x: 0, y: 0, z: 0.5, },
+                header: {
+                    frame_id: "map",
+                    stamp: { secs: 0, nsecs: 0 }
+                },
+                pose: {
+                    position: {
+                        x: goal.x,
+                        y: goal.y,
+                        z: 0.0
+                    },
+                    orientation: goal.quaternion
+                }
             })
             topic.publish(message)
         },
@@ -125,12 +146,29 @@ let vueApp = new Vue({
         startDrag() {
             this.dragging = true
             this.x = this.y = 0
+            // Start publishing at 10Hz
+            if (!this.pubInterval) {
+                this.pubInterval = setInterval(() => {
+                    this.publish()
+                }, 100)
+            }
+            // Listen for mouseup 
+            document.addEventListener('mouseup', this.stopDrag)
         },
         stopDrag() {
             this.dragging = false
             this.x = this.y = 'no'
             this.dragCircleStyle.display = 'none'
             this.resetJoystickVals()
+
+            // Stop publishing
+            if (this.pubInterval) {
+                clearInterval(this.pubInterval)
+                this.pubInterval = null
+            }
+            // Remove mouseup listener and send stop
+            document.removeEventListener('mouseup', this.stopDrag)
+            this.publish()
         },
         doDrag(event) {
             if (this.dragging) {
@@ -153,12 +191,29 @@ let vueApp = new Vue({
             }
         },
         setJoystickVals() {
-            this.joystick.vertical = -1 * ((this.y / 200) - 0.5)
-            this.joystick.horizontal = +1 * ((this.x / 200) - 0.5)
+            this.joystick.vertical = (50 - this.y) / 50;
+            this.joystick.horizontal = -(this.x - 50) / 50;
         },
         resetJoystickVals() {
             this.joystick.vertical = 0
             this.joystick.horizontal = 0
+        },
+        
+        // Camera method
+        setCamera: function() {
+            let without_wss = this.rosbridge_address.split('wss://')[1]
+            console.log(without_wss)
+            let domain = without_wss.split('/')[0] + '/' + without_wss.split('/')[1]
+            console.log(domain)
+            let host = domain + '/cameras'
+            let viewer = new MJPEGCANVAS.Viewer({
+                divID: 'divCamera',
+                host: host,
+                width: 270,
+                height: 200,
+                topic: '/fastbot_1/camera/image_raw',
+                ssl: true,
+            })
         },
 
         // Robot display methods

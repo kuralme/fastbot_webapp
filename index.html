@@ -12,6 +12,9 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/eventemitter2/lib/eventemitter2.min.js"></script>
     <script src="./libs/roslib.min.js"></script>
 
+    <!-- Camera Stream -->
+    <script type="text/javascript" src="./libs/mjpegcanvas.min.js"></script>
+
     <!-- 3D visualization -->
     <script src="./libs/three.min.js"></script>
     <script src="./libs/ColladaLoader.js"></script>
@@ -21,7 +24,7 @@
 
     <!-- Map visualization -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/easeljs/lib/easeljs.min.js"></script>
-    <script type="text/javascript" src="./ros2d.js"></script>
+    <script type="text/javascript" src="./libs/ros2d.js"></script>
 
     <!-- Joystick DragCircle -->
     <style type="text/css">
@@ -69,7 +72,7 @@
         <div class="container">
             <div class="jumbotron text-center">
                 <h1>Fastbot Webapp</h1>
-                <p>Let's connect our website to a ROS robot!</p>
+                <p>Web interface to connect, visualize and navigate the robot to waypoints </p>
             </div>
         </div>
     </header>
@@ -118,17 +121,27 @@
                         <div id="dragstartzone" @mousedown="startDrag" @mousemove="doDrag" @mouseleave="stopDrag">
                         </div>
                         <div id="dragCircle" :style="dragCircleStyle"></div>
+
+                        <!-- waypoint buttons -->
+                        <div class="d-flex flex-column ml-5">
+                            <button class="mt-2 btn-sm btn-primary d-block" :disabled="!connected"
+                                @click="sendGoal('sofa')">sofa</button>
+                            <button class="mt-2 btn-sm btn-primary d-block" :disabled="!connected"
+                                @click="sendGoal('kitchen')">kitchen</button>
+                            <button class="mt-2 btn-sm btn-primary d-block" :disabled="!connected"
+                                @click="sendGoal('living-room')">living-room</button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-md-4 col-sm-12">
+                <div class="col-md-4 col-sm-12" style="overflow:auto;">
                     <!-- map -->
                     <div id="map"></div>
                     <hr />
 
-                    <!-- cam stream, waypoint buttons -->
-
-                    <!-- waypoint buttons -->
+                    <!-- cam stream -->
+                    <div id="divCamera"></div>
+                    <hr />
                 </div>
 
             </div>
